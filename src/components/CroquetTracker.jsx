@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Plus, User, Trophy, Pencil, LogIn } from 'lucide-react';
 
 const DROPBOX_APP_KEY = '4pxpqtryq8n30ta';
