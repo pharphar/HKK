@@ -393,9 +393,16 @@ const CroquetTracker = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-4">
-                  {Object.entries(calculateStats()).map(([player, stats]) => (
-                    <Card key={player} className="p-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Trophy size={16} />
-                          <h3
+                 {Object.entries(calculateStats()).map(([player, stats]) => (
+                  <Card key={player} className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Trophy size={16} />
+                        <h3 className="text-lg font-bold">{player}</h3>
+                      </div>
+                      <p>Total Games: {stats.totalGames}</p>
+                      <p>Average Position: {stats.averagePosition}</p>
+                      <p>Wins: {stats.wins}</p>
+                    </div>
+                </Card>
+              ))}
