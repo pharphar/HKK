@@ -16,18 +16,18 @@ const CroquetTracker = () => {
   const [editingGameIndex, setEditingGameIndex] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [currentGame, setCurrentGame] = useState({
     playerScores: [],
     location: '',
-    timestamp: null
+    timestamp: null,
   });
 
   useEffect(() => {
     // Check if we're returning from Dropbox auth
     const params = new URLSearchParams(window.location.hash.substr(1));
     const accessToken = params.get('access_token');
-    
+
     if (accessToken) {
       localStorage.setItem('dropboxToken', accessToken);
       setIsAuthenticated(true);
@@ -55,20 +55,20 @@ const CroquetTracker = () => {
       const response = await fetch('https://api.dropboxapi.com/2/files/download', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Dropbox-API-Arg': JSON.stringify({
-            path: DROPBOX_FILE_PATH
-          })
-        }
+          Authorization: `Bearer ${accessToken}`,
+          'Dropbox-API-Arg': JSON.stringify({ path: DROPBOX_FILE_PATH }),
+        },
       });
 
       if (response.status === 200) {
         const data = await response.json();
         setPlayers(data.players || []);
-        setGames(data.games.map(game => ({
-          ...game,
-          timestamp: new Date(game.timestamp)
-        })) || []);
+        setGames(
+          (data.games || []).map((game) => ({
+            ...game,
+            timestamp: new Date(game.timestamp),
+          }))
+        );
       }
     } catch (error) {
       console.error('Error loading from Dropbox:', error);
@@ -89,20 +89,20 @@ const CroquetTracker = () => {
       const data = {
         players,
         games,
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
       };
 
       await fetch('https://content.dropboxapi.com/2/files/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/octet-stream',
           'Dropbox-API-Arg': JSON.stringify({
             path: DROPBOX_FILE_PATH,
-            mode: 'overwrite'
-          })
+            mode: 'overwrite',
+          }),
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
     } catch (error) {
       console.error('Error saving to Dropbox:', error);
@@ -115,10 +115,14 @@ const CroquetTracker = () => {
     if (isAuthenticated && !isLoading) {
       saveToDropbox();
     }
-  }, [players, games]);
+  }, [players, games, isAuthenticated, isLoading]);
 
   const addPlayer = () => {
-    if (newPlayerName.trim() && !players.includes(newPlayerName.trim()) && players.length < 4) {
+    if (
+      newPlayerName.trim() &&
+      !players.includes(newPlayerName.trim()) &&
+      players.length < 4
+    ) {
       setPlayers([...players, newPlayerName.trim()]);
       setNewPlayerName('');
     }
@@ -130,7 +134,7 @@ const CroquetTracker = () => {
     setCurrentGame({
       playerScores: [],
       location: '',
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   };
 
@@ -139,18 +143,18 @@ const CroquetTracker = () => {
     setEditingGameIndex(gameIndex);
     setCurrentGame({
       ...games[gameIndex],
-      timestamp: games[gameIndex].timestamp
+      timestamp: games[gameIndex].timestamp,
     });
   };
 
   const addPlayerScore = (player, score) => {
-    const filteredScores = currentGame.playerScores.filter(ps => ps.player !== player);
-    const isScoreUsed = filteredScores.some(ps => ps.score === score);
-    
+    const filteredScores = currentGame.playerScores.filter((ps) => ps.player !== player);
+    const isScoreUsed = filteredScores.some((ps) => ps.score === score);
+
     if (!isScoreUsed) {
-      setCurrentGame(prev => ({
+      setCurrentGame((prev) => ({
         ...prev,
-        playerScores: [...filteredScores, { player, score }]
+        playerScores: [...filteredScores, { player, score }],
       }));
     }
   };
@@ -158,34 +162,37 @@ const CroquetTracker = () => {
   const recordGame = () => {
     if (currentGame.playerScores.length === 4 && currentGame.location) {
       if (editingGameIndex !== null) {
-        setGames(prev => prev.map((game, index) => 
-          index === editingGameIndex ? { ...currentGame } : game
-        ));
+        setGames((prev) =>
+          prev.map((game, index) => (index === editingGameIndex ? { ...currentGame } : game))
+        );
       } else {
-        setGames(prev => [...prev, { ...currentGame }]);
+        setGames((prev) => [...prev, { ...currentGame }]);
       }
       setIsRecordingGame(false);
       setEditingGameIndex(null);
       setCurrentGame({
         playerScores: [],
         location: '',
-        timestamp: null
+        timestamp: null,
       });
     }
   };
 
   const calculateStats = () => {
     const stats = {};
-    players.forEach(player => {
-      const playerGames = games.flatMap(game => 
-        game.playerScores.filter(score => score.player === player)
+    players.forEach((player) => {
+      const playerGames = games.flatMap((game) =>
+        game.playerScores.filter((score) => score.player === player)
       );
       stats[player] = {
         totalGames: playerGames.length,
-        averagePosition: playerGames.length > 0 
-          ? (playerGames.reduce((sum, score) => sum + score.score, 0) / playerGames.length).toFixed(2)
-          : 0,
-        wins: playerGames.filter(score => score.score === 1).length
+        averagePosition:
+          playerGames.length > 0
+            ? (playerGames.reduce((sum, score) => sum + score.score, 0) / playerGames.length).toFixed(
+                2
+              )
+            : 0,
+        wins: playerGames.filter((score) => score.score === 1).length,
       };
     });
     return stats;
@@ -193,13 +200,13 @@ const CroquetTracker = () => {
 
   const getAvailableScores = (currentPlayer) => {
     const usedScores = currentGame.playerScores
-      .filter(ps => ps.player !== currentPlayer)
-      .map(ps => ps.score);
-    return [1, 2, 3, 4].filter(score => !usedScores.includes(score));
+      .filter((ps) => ps.player !== currentPlayer)
+      .map((ps) => ps.score);
+    return [1, 2, 3, 4].filter((score) => !usedScores.includes(score));
   };
 
   const getCurrentPlayerScore = (player) => {
-    const playerScore = currentGame.playerScores.find(ps => ps.player === player);
+    const playerScore = currentGame.playerScores.find((ps) => ps.player === player);
     return playerScore ? playerScore.score : null;
   };
 
@@ -223,10 +230,7 @@ const CroquetTracker = () => {
             <p className="mb-6 text-gray-600">
               Connect with Dropbox to save your games and access them from any device.
             </p>
-            <Button 
-              onClick={authenticateDropbox}
-              className="w-full h-12 text-lg"
-            >
+            <Button onClick={authenticateDropbox} className="w-full h-12 text-lg">
               <LogIn className="mr-2 h-5 w-5" />
               Connect with Dropbox
             </Button>
@@ -259,11 +263,12 @@ const CroquetTracker = () => {
         </TabsList>
 
         <div className="pb-20 px-4">
+          {/* GAMES TAB */}
           <TabsContent value="games" className="mt-4">
             <Card>
               <CardContent className="pt-6">
                 {!isRecordingGame ? (
-                  <Button 
+                  <Button
                     className="w-full h-12 text-lg mb-6"
                     onClick={startNewGame}
                     disabled={players.length < 4}
@@ -274,15 +279,17 @@ const CroquetTracker = () => {
                   <div className="space-y-6">
                     <div>
                       <h3 className="font-semibold mb-2">Assign Positions</h3>
-                      {players.map(player => (
+                      {players.map((player) => (
                         <div key={player} className="mb-2">
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-medium">{player}</span>
                             <div className="flex gap-2">
-                              {getAvailableScores(player).map(score => (
+                              {getAvailableScores(player).map((score) => (
                                 <Button
                                   key={score}
-                                  variant={getCurrentPlayerScore(player) === score ? "default" : "outline"}
+                                  variant={
+                                    getCurrentPlayerScore(player) === score ? 'default' : 'outline'
+                                  }
                                   className="w-12 h-12"
                                   onClick={() => addPlayerScore(player, score)}
                                 >
@@ -299,10 +306,12 @@ const CroquetTracker = () => {
                       <h3 className="font-semibold mb-2">Location</h3>
                       <Input
                         value={currentGame.location}
-                        onChange={(e) => setCurrentGame(prev => ({
-                          ...prev,
-                          location: e.target.value
-                        }))}
+                        onChange={(e) =>
+                          setCurrentGame((prev) => ({
+                            ...prev,
+                            location: e.target.value,
+                          }))
+                        }
                         placeholder="Enter location"
                         className="h-12 text-lg"
                       />
@@ -320,39 +329,43 @@ const CroquetTracker = () => {
 
                 <div className="mt-6 space-y-2">
                   <h3 className="font-semibold">Recent Games</h3>
-                  {games.slice().reverse().map((game, index) => {
-                    const reverseIndex = games.length - 1 - index;
-                    return (
-                      <Card key={index} className="p-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="text-sm text-gray-500">
-                            {game.location} - {game.timestamp.toLocaleString()}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => startEditingGame(reverseIndex)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Pencil size={16} />
-                          </Button>
-                        </div>
-                        {game.playerScores
-                          .sort((a, b) => a.score - b.score)
-                          .map(ps => (
-                            <div key={ps.player} className="flex justify-between">
-                              <span>{ps.player}</span>
-                              <span className="font-medium">{ps.score}</span>
+                  {games
+                    .slice()
+                    .reverse()
+                    .map((game, index) => {
+                      const reverseIndex = games.length - 1 - index;
+                      return (
+                        <Card key={index} className="p-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="text-sm text-gray-500">
+                              {game.location} - {game.timestamp.toLocaleString()}
                             </div>
-                          ))}
-                      </Card>
-                    );
-                  })}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEditingGame(reverseIndex)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                          </div>
+                          {game.playerScores
+                            .sort((a, b) => a.score - b.score)
+                            .map((ps) => (
+                              <div key={ps.player} className="flex justify-between">
+                                <span>{ps.player}</span>
+                                <span className="font-medium">{ps.score}</span>
+                              </div>
+                            ))}
+                        </Card>
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* PLAYERS TAB */}
           <TabsContent value="players" className="mt-4">
             <Card>
               <CardContent className="pt-6">
@@ -365,7 +378,7 @@ const CroquetTracker = () => {
                       className="h-12 text-lg"
                       disabled={players.length >= 4}
                     />
-                    <Button 
+                    <Button
                       onClick={addPlayer}
                       className="h-12 px-6"
                       disabled={players.length >= 4}
@@ -375,7 +388,7 @@ const CroquetTracker = () => {
                   </div>
 
                   <div className="space-y-2">
-                    {players.map(player => (
+                    {players.map((player) => (
                       <Card key={player} className="p-4">
                         <div className="flex items-center gap-2">
                           <User size={16} />
@@ -389,20 +402,32 @@ const CroquetTracker = () => {
             </Card>
           </TabsContent>
 
+          {/* STATS TAB */}
           <TabsContent value="stats" className="mt-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-4">
-                 {Object.entries(calculateStats()).map(([player, stats]) => (
-                  <Card key={player} className="p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Trophy size={16} />
-                        <h3 className="text-lg font-bold">{player}</h3>
+                  {Object.entries(calculateStats()).map(([player, stats]) => (
+                    <Card key={player} className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Trophy size={16} />
+                          <h3 className="text-lg font-bold">{player}</h3>
+                        </div>
+                        <p>Total Games: {stats.totalGames}</p>
+                        <p>Average Position: {stats.averagePosition}</p>
+                        <p>Wins: {stats.wins}</p>
                       </div>
-                      <p>Total Games: {stats.totalGames}</p>
-                      <p>Average Position: {stats.averagePosition}</p>
-                      <p>Wins: {stats.wins}</p>
-                    </div>
-                </Card>
-              ))}
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </div>
+      </Tabs>
+    </div>
+  );
+};
+
+export default CroquetTracker;
