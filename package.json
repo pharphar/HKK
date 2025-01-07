@@ -2,13 +2,7 @@
   "name": "holbaek-kroket-klub",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "client": "cd client && npm start",
-    "server": "cd server && npm start",
     "build": "cd client && npm install && npm run build",
     "start": "cd client && npm start"
   }
